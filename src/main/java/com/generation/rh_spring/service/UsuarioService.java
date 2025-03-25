@@ -42,8 +42,6 @@ public class UsuarioService {
 	}
 
 	public Optional<Usuario> atualizarUsuario(Usuario usuario) {
-
-		usuario.setId(null);
 		
 		if (usuarioRepository.findById(usuario.getId()).isPresent()) {
 

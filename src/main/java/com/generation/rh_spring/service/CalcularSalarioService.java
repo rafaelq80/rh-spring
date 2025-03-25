@@ -122,6 +122,7 @@ public class CalcularSalarioService {
 					+ faixa.getAliquota() + "%" + " | Dedução R$ " + faixa.getDeducao());
 
 			if (baseDeCalculo.compareTo(BigDecimal.valueOf(faixa.getLimite())) <= 0) {
+				
 				// 1. Calcula o valor da alíquota mantendo 2 casas decimais em cada operação
 				BigDecimal aliquota = BigDecimal.valueOf(faixa.getAliquota()).divide(new BigDecimal("100"), 4,
 						RoundingMode.HALF_UP);
