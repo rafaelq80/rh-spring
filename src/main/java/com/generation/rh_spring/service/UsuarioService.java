@@ -1,13 +1,13 @@
 ﻿package com.generation.rh_spring.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -28,77 +28,79 @@ public class UsuarioService {
 	@Autowired
 	private AuthenticationManager authenticationManager;
 
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
+	public List<Usuario> getAll() {
+		return usuarioRepository.findAll();
+	}
+
+	public Optional<Usuario> getById(Long id) {
+		return usuarioRepository.findById(id);
+	}
+
 	public Optional<Usuario> cadastrarUsuario(Usuario usuario) {
 
+		if (usuarioRepository.findByUsuario(usuario.getUsuario()).isPresent()) {
+			return Optional.empty();
+		}
+
+		usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
 		usuario.setId(null);
 		
-		if (usuarioRepository.findByUsuario(usuario.getUsuario()).isPresent())
-			return Optional.empty();
-
-		usuario.setSenha(criptografarSenha(usuario.getSenha()));
-
 		return Optional.of(usuarioRepository.save(usuario));
-
 	}
 
 	public Optional<Usuario> atualizarUsuario(Usuario usuario) {
-		
-		if (usuarioRepository.findById(usuario.getId()).isPresent()) {
 
-			Optional<Usuario> buscaUsuario = usuarioRepository.findByUsuario(usuario.getUsuario());
-
-			if ((buscaUsuario.isPresent()) && (buscaUsuario.get().getId() != usuario.getId()))
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuário já existe!", null);
-
-			usuario.setSenha(criptografarSenha(usuario.getSenha()));
-
-			return Optional.ofNullable(usuarioRepository.save(usuario));
-
+		if (!usuarioRepository.findById(usuario.getId()).isPresent()) {
+			return Optional.empty();
 		}
 
-		return Optional.empty();
+		Optional<Usuario> usuarioExistente = usuarioRepository.findByUsuario(usuario.getUsuario());
+		
+		if (usuarioExistente.isPresent() && !usuarioExistente.get().getId().equals(usuario.getId())) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuário já existe!", null);
+		}
 
+		usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+		return Optional.of(usuarioRepository.save(usuario));
 	}
-
+	
 	public Optional<UsuarioLogin> autenticarUsuario(Optional<UsuarioLogin> usuarioLogin) {
 
-		var credenciais = new UsernamePasswordAuthenticationToken(usuarioLogin.get().getUsuario(),
-				usuarioLogin.get().getSenha());
-
-		Authentication authentication = authenticationManager.authenticate(credenciais);
-
-		if (authentication.isAuthenticated()) {
-
-			Optional<Usuario> usuario = usuarioRepository.findByUsuario(usuarioLogin.get().getUsuario());
-
-			if (usuario.isPresent()) {
-
-				usuarioLogin.get().setId(usuario.get().getId());
-				usuarioLogin.get().setNome(usuario.get().getNome());
-				usuarioLogin.get().setFoto(usuario.get().getFoto());
-				usuarioLogin.get().setToken(gerarToken(usuarioLogin.get().getUsuario()));
-				usuarioLogin.get().setSenha("");
-
-				return usuarioLogin;
-
-			}
-
+		if (!usuarioLogin.isPresent()) {
+			return Optional.empty();
 		}
 
-		return Optional.empty();
+		UsuarioLogin login = usuarioLogin.get();
+		
+		try {
+ 
+			authenticationManager.authenticate(
+					new UsernamePasswordAuthenticationToken(login.getUsuario(), login.getSenha()));
 
+			return usuarioRepository.findByUsuario(login.getUsuario())
+				.map(usuario -> construirRespostaLogin(login, usuario));
+
+		} catch (Exception e) {
+
+			return Optional.empty();
+		}
 	}
 
-	private String criptografarSenha(String senha) {
-
-		BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-
-		return encoder.encode(senha);
-
+	private UsuarioLogin construirRespostaLogin(UsuarioLogin usuarioLogin, Usuario usuario) {
+		
+		usuarioLogin.setId(usuario.getId());
+		usuarioLogin.setNome(usuario.getNome());
+		usuarioLogin.setFoto(usuario.getFoto());
+		usuarioLogin.setSenha("");
+		usuarioLogin.setToken(gerarToken(usuario.getUsuario()));
+		return usuarioLogin;
+		
 	}
 
 	private String gerarToken(String usuario) {
 		return "Bearer " + jwtService.generateToken(usuario);
 	}
-
 }

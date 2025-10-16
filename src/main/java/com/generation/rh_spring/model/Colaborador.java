@@ -58,8 +58,6 @@ public class Colaborador {
 	@JsonIgnoreProperties("colaborador")
 	private Departamento departamento;
 
-	public Colaborador() { }
-
 	public Long getId() {
 		return id;
 	}

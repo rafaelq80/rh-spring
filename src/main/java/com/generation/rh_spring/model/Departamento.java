@@ -29,10 +29,8 @@ public class Departamento {
     private String icone;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "departamento", cascade = CascadeType.REMOVE)
-    @JsonIgnoreProperties("departamento")
+    @JsonIgnoreProperties(value = "departamento", allowSetters = true)
     private List<Colaborador> colaborador;
-
-    public Departamento() {}
 
 	public Long getId() {
 		return id;

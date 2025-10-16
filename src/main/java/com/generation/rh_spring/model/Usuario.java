@@ -33,8 +33,6 @@ public class Usuario {
 
 	@Size(max = 5000, message = "O link da foto deve ter no máximo 5000 caracteres")
 	private String foto;
-
-	public Usuario() { }
 	
 	public Long getId() {
 		return id;

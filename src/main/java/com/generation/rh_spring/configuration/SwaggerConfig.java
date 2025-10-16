@@ -4,6 +4,7 @@ import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
@@ -11,6 +12,8 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 
 @Configuration
 public class SwaggerConfig {
@@ -31,7 +34,10 @@ public class SwaggerConfig {
                     .email("conteudogeneration@generation.org")))
             .externalDocs(new ExternalDocumentation()
                 .description("Github")
-                .url("https://github.com/conteudoGeneration/"));
+                .url("https://github.com/conteudoGeneration/"))
+            .components(new Components()
+                    .addSecuritySchemes("jwt_auth", createSecurityScheme()))
+                	.addSecurityItem(new SecurityRequirement().addList("jwt_auth"));
     }
 
 
@@ -61,4 +67,14 @@ public class SwaggerConfig {
 		return new ApiResponse().description(message);
 
 	}
+	
+	private SecurityScheme createSecurityScheme() {
+	    return new SecurityScheme()
+	        .name("jwt_auth")
+	        .type(SecurityScheme.Type.HTTP)
+	        .scheme("bearer")
+	        .bearerFormat("JWT")
+	        .description("Insira apenas o token JWT (a palavra 'Bearer' será adicionada automaticamente)");
+	}
+	
 }

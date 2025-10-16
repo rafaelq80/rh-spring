@@ -1,7 +1,6 @@
 ﻿package com.generation.rh_spring.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,10 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.generation.rh_spring.model.Departamento;
-import com.generation.rh_spring.repository.DepartamentoRepository;
+import com.generation.rh_spring.service.DepartamentoService;
 
 import jakarta.validation.Valid;
 
@@ -28,49 +26,39 @@ import jakarta.validation.Valid;
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class DepartamentoController {
 
-	@Autowired
-	private DepartamentoRepository departamentoRepository;
+    @Autowired
+    private DepartamentoService departamentoService;
 
-	@GetMapping
-	public ResponseEntity<List<Departamento>> getAll() {
-		return ResponseEntity.ok(departamentoRepository.findAll());
-	}
+    @GetMapping
+    public ResponseEntity<List<Departamento>> getAll() {
+        return ResponseEntity.ok(departamentoService.getAll());
+    }
 
-	@GetMapping("/{id}")
-	public ResponseEntity<Departamento> getById(@PathVariable Long id) {
-		return departamentoRepository.findById(id).map(resposta -> ResponseEntity.ok(resposta))
-				.orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-	}
+    @GetMapping("/{id}")
+    public ResponseEntity<Departamento> getById(@PathVariable Long id) {
+        return departamentoService.getById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
 
-	@GetMapping("/descricao/{descricao}")
-	public ResponseEntity<List<Departamento>> getByDescricao(@PathVariable String descricao) {
-		return ResponseEntity.ok(departamentoRepository.findAllByDescricaoContainingIgnoreCase(descricao));
-	}
+    @GetMapping("/descricao/{descricao}")
+    public ResponseEntity<List<Departamento>> getByDescricao(@PathVariable String descricao) {
+        return ResponseEntity.ok(departamentoService.getByDescricao(descricao));
+    }
 
-	@PostMapping
-	public ResponseEntity<Departamento> post(@Valid @RequestBody Departamento departamento) {
+    @PostMapping
+    public ResponseEntity<Departamento> post(@Valid @RequestBody Departamento departamento) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(departamentoService.post(departamento));
+    }
 
-		System.out.println(departamento.getId());
+    @PutMapping
+    public ResponseEntity<Departamento> put(@Valid @RequestBody Departamento departamento) {
+        return ResponseEntity.ok(departamentoService.put(departamento));
+    }
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(departamentoRepository.save(departamento));
-	}
-
-	@PutMapping
-	public ResponseEntity<Departamento> put(@Valid @RequestBody Departamento departamento) {
-		return departamentoRepository.findById(departamento.getId())
-				.map(resposta -> ResponseEntity.status(HttpStatus.OK).body(departamentoRepository.save(departamento)))
-				.orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-	}
-
-	@ResponseStatus(HttpStatus.NO_CONTENT)
-	@DeleteMapping("/{id}")
-	public void delete(@PathVariable Long id) {
-		Optional<Departamento> departamento = departamentoRepository.findById(id);
-
-		if (departamento.isEmpty())
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-
-		departamentoRepository.deleteById(id);
-	}
-
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        departamentoService.delete(id);
+    }
 }
